@@ -5,13 +5,18 @@ build, run command regenerates `data/`, notebook executes top to bottom, every
 red-font figure present, every question answered, results match the reference.
 
 ## Setup
-- [ ] Install Armadillo (`sudo apt install libarmadillo-dev`)
-- [ ] Install MPI (`sudo apt install libopenmpi-dev openmpi-bin`)
-- [ ] `uv pip install --python .venv/bin/python numpy scipy matplotlib`
-- [ ] `uv pip install --python .venv/bin/python tensorflow pillow` (for 11–12)
+- [x] `uv pip install --python .venv/bin/python numpy scipy matplotlib`
+- [x] Install MPI (`libopenmpi-dev openmpi-bin`, Open MPI 4.1.6)
+- [ ] `uv pip install --python .venv/bin/python tensorflow` (for 11–12)
+- [x] Move the professor's simulator into tracked `NSL_SIMULATOR/` (reference code, `._*` files dropped)
 - [ ] Copy NSL RNG into `common/` (random.h/.cpp, Primes, seed.in) + blocking helper
-- [ ] Copy `simulator/NSL_SIMULATOR/` into tracked `NSL_SIMULATOR/` (drop `._*` files); build it
-- [ ] Disable per-step `write_XYZ` in `NSL_SIMULATOR.cpp` before long runs
+
+## Own simulator (for 04, 06, 07; user writes it)
+- [ ] Decide: own simulator or extend the professor's; directory name; Armadillo or not
+- [ ] Install Armadillo only if the chosen simulator needs it (`sudo apt install libarmadillo-dev`)
+- [ ] MD (Verlet, NVE) + MC (Metropolis, NVT) for Lennard-Jones, Metropolis + Gibbs for 1D Ising
+- [ ] Blocking + input-file driven parameters + restart from a saved configuration
+- [ ] Cross-check against `NSL_SIMULATOR/` on the same input
 
 ## 01 — RNG, CLT, Buffon
 - [ ] 01.1.1 `<r>` with blocking vs #throws
@@ -30,8 +35,8 @@ red-font figure present, every question answered, results match the reference.
 - [ ] Call/put discretized GBM (100 steps), blocking
 - [ ] 4 figures vs analytic C = 14.9758, P = 5.4595
 
-## 04 — MD, Maxwell–Boltzmann (NSL_SIMULATOR)
-- [ ] 04.1 p(v*) histogram with blocking inside the simulator (POFV)
+## 04 — MD, Maxwell–Boltzmann (simulator)
+- [ ] 04.1 p(v*) histogram with blocking inside the simulator
 - [ ] 04.2 gas ρ*=0.05, T*≈2, r_c=5: fcc half-box + δ-velocity start; convergence to MB at T_eff
 - [ ] 04.2 comment on entropy and time direction
 - [ ] 04.3 time reversal from ~5×10³ and ~5×10⁴ steps; U and T per block both directions
@@ -43,12 +48,12 @@ red-font figure present, every question answered, results match the reference.
 - [ ] Gaussian T(x|y): equivalent results?
 - [ ] 3D scatter of sampled points
 
-## 06 — 1D Ising (NSL_SIMULATOR)
+## 06 — 1D Ising (simulator)
 - [ ] Implement Gibbs sampler; verify restart from a spin configuration
 - [ ] Add C, χ, M measurements
 - [ ] U, C, χ (h=0), M (h=0.02) vs T ∈ [0.5, 2], N=50, J=1; Metropolis and Gibbs vs exact curves
 
-## 07 — LJ MC vs MD (NSL_SIMULATOR)
+## 07 — LJ MC vs MD (simulator)
 - [ ] 07.1 tail corrections for U and P
 - [ ] 07.2 find MD starting T that equilibrates at T*=1.1; MC step for 50% acceptance
 - [ ] 07.2 instantaneous U/N, 5×10⁵ steps MC + MD (restart after equilibration)

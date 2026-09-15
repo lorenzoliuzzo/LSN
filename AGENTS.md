@@ -42,16 +42,16 @@ them into the tracked tree first.
   `prov_ita.txt` has the matching names, in the same order.
 - `lectures/LSN_lecture_NN.pdf`: theory. `LSN_lecture_03_THM.pdf` (supplement to
   lecture 03) and `IsingformulationsofmanyNPproblems.pdf` are extra reading.
-- `simulator/NSL_SIMULATOR/`: the professor's starter code (C++11 + Armadillo).
-  Walk-throughs in `simulator/LSN_lecture_0{4,6,7}_code.pdf`. `._*` files are
-  macOS junk; ignore them.
+- `simulator/LSN_lecture_0{4,6,7}_code.pdf`: walk-throughs of the professor's
+  simulator code. The code itself was moved to the tracked `NSL_SIMULATOR/`
+  (see below).
 
 ## Deliverable layout (tracked)
 ```
 common/                 NSL RNG (random.h/.cpp, Primes, seed.in) + blocking helper,
                         shared by every standalone C++ exercise
-NSL_SIMULATOR/          tracked copy of the professor's simulator, evolved across
-                        groups 04, 06, 07 (SOURCE/, INPUT/, OUTPUT/)
+NSL_SIMULATOR/          the professor's simulator (SOURCE/, INPUT/, OUTPUT/),
+                        committed as shipped: reference code, see below
 exNN/                   one directory per group, NN = 01..12
   Makefile, *.cpp, *.h  standalone C++ code (01–03, 05, 08–10)
   input/                parameter files read by the program (no hard-coded params)
@@ -59,21 +59,40 @@ exNN/                   one directory per group, NN = 01..12
   exNN.ipynb            the report for group NN
 README.md               compile & run instructions for every group (course requirement)
 ```
-The simulator is a single evolving copy. Features added for later groups (Gibbs
-sampling, tail corrections, g(r)) must not break earlier ones (p(v) from 04).
-Keep one input set per run under `exNN/input/` and copy results into
-`exNN/data/`. The simulator hard-codes the relative paths `../INPUT` and
-`../OUTPUT`, so run it from `NSL_SIMULATOR/SOURCE/`.
+### The simulator: the professor's code is reference, not the base
+The user will **probably write their own simulator, for learning purposes**, and
+use it for groups 04, 06, 07 instead of extending `NSL_SIMULATOR/`. Until the
+user decides:
+- Treat `NSL_SIMULATOR/` as reference. Read it to understand what the course
+  expects (input format, measured properties, blocking, output files) and use
+  it as a cross-check, but don't build features on it or modify it.
+- The user's own simulator lives in its own directory (name chosen by the user).
+  **The user writes it.** Explain algorithms, review their code, point at bugs
+  and at what the professor's version does differently. Don't write the
+  simulator for them unless they ask for a specific piece.
+- Whichever simulator is used, it must eventually provide everything 04, 06, 07
+  ask for (p(v), Gibbs sampling, C/χ/M, tail corrections, g(r)), and features
+  added for later groups must not break earlier ones.
+
+The professor's code hard-codes the relative paths `../INPUT` and `../OUTPUT`,
+so it runs from `NSL_SIMULATOR/SOURCE/`. Its `OUTPUT/` is git-ignored. Results
+worth keeping go into `exNN/data/`, with the input set used under `exNN/input/`.
 
 ## Toolchain (checked 2026-09-15)
 - `g++` 13.3. No cmake: use plain Makefiles like the professor's. New code
   builds with `-O3 -std=c++17 -Wall -Wextra`.
-- **Armadillo is not installed**, and the simulator links `-larmadillo`.
-  Install with `sudo apt install libarmadillo-dev`.
-- **MPI is not installed**, and group 10 needs it. Install with
-  `sudo apt install libopenmpi-dev openmpi-bin`.
-- `.venv/` (Python 3.12) has **only Jupyter**. It still needs `numpy scipy
-  matplotlib`, plus `tensorflow pillow` for 11–12. Install with
+- **Armadillo is not installed, on purpose.** The professor's simulator links
+  `-larmadillo`, but installing it waits until the user decides whether their
+  own simulator uses it. Don't install it or build `NSL_SIMULATOR/` until then.
+- MPI (group 10): Open MPI 4.1.6 (`mpicxx`, `mpirun`). The CPU has 10 physical
+  cores / 16 hardware threads, and Open MPI counts cores, so 11 ranks need
+  `mpirun --use-hwthread-cpus -np 11`. Build with `-DOMPI_SKIP_MPICXX`: Open MPI's
+  deprecated C++ bindings header otherwise emits `-Wcast-function-type`
+  warnings under `-Wextra`. Use the C API (`MPI_Init`, `MPI_Send`, ...).
+- `sudo` needs the user's password and doesn't work from the `!` prefix, so
+  the user runs system installs in their own terminal.
+- `.venv/` (Python 3.12): Jupyter, `numpy`, `scipy`, `matplotlib`, `pillow`
+  installed. Still needs `tensorflow` for 11–12. Install with
   `uv pip install --python .venv/bin/python ...` (not plain pip).
 - System installs (`sudo apt`) and any Python package beyond the list above:
   ask first.
@@ -117,9 +136,10 @@ Keep one input set per run under `exNN/input/` and copy results into
   - 10.2: improvement vs independent searches
   - 11.2: model complexity vs generalization
 - Long runs never happen inside a notebook. The C++ program writes to `data/`
-  and the notebook reads from there. `NSL_SIMULATOR.cpp` currently calls
-  `write_XYZ` **every step** (the `j%50` guard is commented out), which floods
-  `OUTPUT/CONFIG/`. Disable it before production runs.
+  and the notebook reads from there. The professor's
+  `NSL_SIMULATOR.cpp` calls `write_XYZ` **every step** (the `j%50` guard is
+  commented out), which floods `OUTPUT/CONFIG/`. Disable it before any long run
+  with that code.
 
 ## Exercise map
 | Group | Topic | Code base | Exact reference to check against |
@@ -127,10 +147,10 @@ Keep one input set per run under `exNN/input/` and copy results into
 | 01 | RNG tests, χ², CLT (std/exp/Cauchy dice), Buffon π | standalone | `<r>=1/2`, `σ²=1/12`, χ²≈100 per 100 bins, π |
 | 02 | MC integral (uniform + importance sampling); 3D RW lattice/continuum | standalone | `I=1`; `√<r²> ∝ √N` |
 | 03 | Black–Scholes call/put, direct and discretized GBM | standalone | C = 14.9758, P = 5.4595 |
-| 04 | MD: p(v) histogram; fcc half-box + δ-velocity start; time reversal | NSL_SIMULATOR | Maxwell–Boltzmann at T_eff |
+| 04 | MD: p(v) histogram; fcc half-box + δ-velocity start; time reversal | simulator | Maxwell–Boltzmann at T_eff |
 | 05 | Metropolis sampling of H 1s, 2p (uniform & Gaussian T) | standalone | `<r>` = 1.5 a₀, 5 a₀ |
-| 06 | 1D Ising: add Gibbs; U, C, χ, M(h=0.02); N=50, J=1, T∈[0.5,2] | NSL_SIMULATOR | exact 1D formulas in statement |
-| 07 | tail corrections; U/N autocorrelation; error vs L; g(r); MC NVT vs MD NVE, ρ*=0.8 T*=1.1 r_c=2.5 | NSL_SIMULATOR | MC ↔ MD agreement |
+| 06 | 1D Ising: add Gibbs; U, C, χ, M(h=0.02); N=50, J=1, T∈[0.5,2] | simulator | exact 1D formulas in statement |
+| 07 | tail corrections; U/N autocorrelation; error vs L; g(r); MC NVT vs MD NVE, ρ*=0.8 T*=1.1 r_c=2.5 | simulator | MC ↔ MD agreement |
 | 08 | VMC 1D, V=x⁴−5/2x², trial ψ with σ, μ; simulated annealing | standalone | numerical diagonalization in statement; E₀ ≈ −0.46 |
 | 09 | TSP genetic algorithm; 34 cities on a circle / in a square | standalone | circle: optimum is the perimeter order |
 | 10 | GA parallelized with MPI; 110 Italian provincial capitals | standalone + MPI | vs serial / independent searches |
@@ -150,10 +170,11 @@ Per-group notes:
   Ask for them rather than generating them.
 
 ## Working method in this repo
-- **Inside the professor's simulator, match his style.** It uses C++11,
-  Armadillo `vec`/`field`, `using namespace` in headers, and `_member` names.
-  Keep it recognizable to him; don't modernize or refactor it. New standalone
-  code follows the global C++17 conventions (RAII, no owning raw pointers).
+- **Don't restyle the professor's simulator.** It uses C++11, Armadillo
+  `vec`/`field`, `using namespace` in headers, and `_member` names. If it is
+  ever extended, keep it recognizable to him. New code, including the user's
+  own simulator, follows the global C++17 conventions (RAII, no owning raw
+  pointers).
 - **Params come from input files**, not recompiles. A run is reproducible from
   `input/` + seed.
 - **No unit-test framework here.** This overrides the global "always pytest"

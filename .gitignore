@@ -2,3 +2,12 @@
 lectures/
 exercises/
 simulator/
+
+# Build artifacts
+*.o
+*.exe
+
+# Simulator run outputs (results worth keeping are copied into exNN/data/)
+NSL_SIMULATOR/OUTPUT/**
+!NSL_SIMULATOR/OUTPUT/**/
+!NSL_SIMULATOR/OUTPUT/**/.gitkeep
