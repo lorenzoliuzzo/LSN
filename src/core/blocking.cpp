@@ -2,8 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
+#include <print>
 #include <stdexcept>
 
 #include "core/io.h"
@@ -34,9 +33,7 @@ double BlockStats::error() const {
 
 ScalarObservable::ScalarObservable(const std::filesystem::path& file, const std::string& label)
     : out_(open_output(file)) {
-  out_ << '#' << std::setw(7) << "BLOCK:" << std::setw(20) << ("ACTUAL_" + label + ":") << std::setw(20)
-       << (label + "_AVE:") << std::setw(20) << "ERROR:" << '\n'
-       << std::setprecision(10);
+  std::println(out_, "#{:>7}{:>20}{:>20}{:>20}", "BLOCK:", "ACTUAL_" + label + ":", label + "_AVE:", "ERROR:");
 }
 
 void ScalarObservable::add(double value) {
@@ -53,8 +50,8 @@ void ScalarObservable::close_block(double block_value) {
   stats_.add_block(block_value);
   block_sum_ = 0.0;
   block_count_ = 0;
-  out_ << std::setw(8) << stats_.blocks() << std::setw(20) << block_value << std::setw(20) << stats_.mean()
-       << std::setw(20) << stats_.error() << '\n';
+  std::println(out_, "{:>8}{:>20.10g}{:>20.10g}{:>20.10g}", stats_.blocks(), block_value, stats_.mean(),
+               stats_.error());
 }
 
 BlockedHistogram::BlockedHistogram(int bins, double x_max)
@@ -72,20 +69,19 @@ void BlockedHistogram::fill(double x, double weight) {
 
 void BlockedHistogram::write_block(std::ostream& out, int block) const {
   for (int bin = 0; bin < bins(); ++bin) {
-    out << block << ' ' << center(bin) << ' ' << stats_[bin].last() << '\n';
+    std::println(out, "{} {} {}", block, center(bin), stats_[bin].last());
   }
 }
 
 void BlockedHistogram::write_final(const std::filesystem::path& file, const std::string& x_label,
                                    const std::string& y_label) const {
   std::ofstream out = open_output(file);
-  out << "# " << x_label << ": AVE_" << y_label << ": ERROR:\n" << std::setprecision(10);
+  std::println(out, "# {}: AVE_{}: ERROR:", x_label, y_label);
   for (int bin = 0; bin < bins(); ++bin) {
-    out << center(bin) << ' ' << stats_[bin].mean() << ' ' << stats_[bin].error() << '\n';
+    std::println(out, "{:.10g} {:.10g} {:.10g}", center(bin), stats_[bin].mean(), stats_[bin].error());
   }
 }
 
 void print_summary(const std::string& name, const ScalarObservable& observable) {
-  std::cout << std::setw(8) << name << " = " << observable.stats().mean() << " +- "
-            << observable.stats().error() << '\n';
+  std::println("{:>8} = {:.6g} +- {:.6g}", name, observable.stats().mean(), observable.stats().error());
 }

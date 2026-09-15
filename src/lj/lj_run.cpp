@@ -1,9 +1,9 @@
 #include "lj/lj_run.h"
 
 #include <cmath>
-#include <iomanip>
-#include <iostream>
+#include <numbers>
 #include <optional>
+#include <print>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -17,7 +17,7 @@
 #include "lj/lj_system.h"
 
 namespace {
-constexpr double pi = 3.14159265358979323846;
+constexpr double pi = std::numbers::pi;
 
 double lattice_fill(const std::string& lattice) {
   if (lattice == "FCC") return 1.0;
@@ -75,17 +75,17 @@ void run_lj(const InputFile& input, const RunSetup& setup, Random& rnd) {
     total.emplace(out / "total_energy.dat", "E/N");
     temperature.emplace(out / "temperature.dat", "T");
     pofv_blocks = open_output(out / "pofv_blocks.dat");
-    pofv_blocks << "# BLOCK: VELOCITY: POFV:\n";
+    std::println(pofv_blocks, "# BLOCK: VELOCITY: POFV:");
   }
   BlockedHistogram gofr(gofr_bins, 0.5 * sys.side());
   std::ofstream gofr_blocks = open_output(out / "gofr_blocks.dat");
-  gofr_blocks << "# BLOCK: DISTANCE: GOFR:\n";
+  std::println(gofr_blocks, "# BLOCK: DISTANCE: GOFR:");
   std::ofstream acceptance = open_output(out / "acceptance.dat");
-  acceptance << "# BLOCK: ACCEPTANCE:\n";
+  std::println(acceptance, "# BLOCK: ACCEPTANCE:");
   std::ofstream instant;
   if (print_instant) {
     instant = open_output(out / "instant.dat");
-    instant << (md ? "# STEP: U/N: T:\n" : "# STEP: U/N:\n") << std::setprecision(10);
+    std::println(instant, "{}", md ? "# STEP: U/N: T:" : "# STEP: U/N:");
   }
   if (xyz_every > 0) std::filesystem::create_directories(out / "CONFIG");
 
@@ -123,9 +123,11 @@ void run_lj(const InputFile& input, const RunSetup& setup, Random& rnd) {
       // Virial theorem: P = rho T + W / (3V), W = sum over pairs of r_ij . F_ij, plus the tail.
       pressure.add(rho * t_now + pairs.virial / (3.0 * sys.volume()) + sys.tail_pressure());
       if (print_instant) {
-        instant << step << ' ' << u;
-        if (md) instant << ' ' << t_now;
-        instant << '\n';
+        if (md) {
+          std::println(instant, "{} {:.10g} {:.10g}", step, u, t_now);
+        } else {
+          std::println(instant, "{} {:.10g}", step, u);
+        }
       }
       if (xyz_every > 0 && step % xyz_every == 0) {
         sys.write_xyz(out / "CONFIG" / ("config_" + std::to_string(step) + ".xyz"), conf);
@@ -151,7 +153,7 @@ void run_lj(const InputFile& input, const RunSetup& setup, Random& rnd) {
       pofv->close_block([&](int) { return samples * npart * pofv->width(); });
       pofv->write_block(pofv_blocks, block);
     }
-    acceptance << block << ' ' << static_cast<double>(accepted) / (samples * npart) << '\n';
+    std::println(acceptance, "{} {}", block, static_cast<double>(accepted) / (samples * npart));
   }
 
   gofr.write_final(out / "gofr.dat", "DISTANCE", "GOFR");
@@ -161,8 +163,8 @@ void run_lj(const InputFile& input, const RunSetup& setup, Random& rnd) {
   if (md) sys.write_xyz(out / "conf-1.xyz", sys.pos_old);
   rnd.save_state(out / "seed.out");
 
-  std::cout << (md ? "LJ molecular dynamics (NVE)" : "LJ Monte Carlo (NVT)") << ": " << setup.nblocks
-            << " blocks x " << setup.nsteps << " steps\n";
+  std::println("{}: {} blocks x {} steps", md ? "LJ molecular dynamics (NVE)" : "LJ Monte Carlo (NVT)",
+               setup.nblocks, setup.nsteps);
   print_summary("U/N", potential);
   if (md) {
     print_summary("K/N", *kinetic);

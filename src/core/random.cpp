@@ -1,13 +1,15 @@
 #include "core/random.h"
 
 #include <cmath>
+#include <numbers>
+#include <print>
 #include <stdexcept>
 #include <string>
 
 #include "core/io.h"
 
 namespace {
-constexpr double pi = 3.14159265358979323846;
+constexpr double pi = std::numbers::pi;
 constexpr std::uint64_t seed_base = 4096;  // NSL seeds and increments are 12-bit digits
 }  // namespace
 
@@ -88,6 +90,6 @@ void Random::save_state(const std::filesystem::path& file) const {
     return;
   }
   // Same four-digit format as seed.in, so a saved state can also seed a fresh run.
-  out << (lcg_state_ >> 36) << ' ' << ((lcg_state_ >> 24) & 4095) << ' ' << ((lcg_state_ >> 12) & 4095)
-      << ' ' << (lcg_state_ & 4095) << '\n';
+  std::println(out, "{} {} {} {}", lcg_state_ >> 36, (lcg_state_ >> 24) & 4095, (lcg_state_ >> 12) & 4095,
+               lcg_state_ & 4095);
 }

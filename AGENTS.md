@@ -66,7 +66,7 @@ README.md               compile & run instructions for every group (course requi
 - **`NSL_SIMULATOR/` is reference only.** Read it to see what the course expects
   (input format, measured properties, output files) and use it as a cross-check.
   Don't build on it or modify it.
-- **`src/` is a from-scratch C++17 simulator** that Claude sketched at the
+- **`src/` is a from-scratch C++23 simulator** that Claude sketched at the
   user's request on 2026-09-15. It needs no Armadillo and already covers
   everything 04, 06, 07 ask for (p(v), Gibbs, C/χ/M, tail corrections, g(r),
   the low-entropy start, time reversal). The user may study it and rewrite parts
@@ -127,8 +127,18 @@ and `../OUTPUT`, so it runs from `NSL_SIMULATOR/SOURCE/`, and its `OUTPUT/` is
 git-ignored.
 
 ## Toolchain (checked 2026-09-15)
-- `g++` 13.3. No cmake: use plain Makefiles like the professor's. New code
-  builds with `-O3 -std=c++17 -Wall -Wextra -Wpedantic`.
+- **Compiler: `g++-14` (14.2), C++23.** Every Makefile sets `CXX := g++-14` and
+  builds with `-O3 -std=c++23 -Wall -Wextra -Wpedantic`. The default `g++` is
+  13.3, which lacks `<print>`. Install with `sudo apt install g++-14` (Ubuntu
+  24.04 universe; run by the user). The README must state the g++ ≥ 14
+  requirement. No cmake: use plain Makefiles like the professor's.
+- **Text output goes through `std::print` / `std::println`**, never iostream
+  formatting (`setw`, `setprecision`, `std::cout`, `std::cerr`). Use
+  `std::println(stderr, ...)` for errors. Block data is written as `{:.10g}`;
+  configurations that a restart reads back use `{}`, the shortest decimal
+  that reads back as the same double, so restarts stay exact. Only the
+  `std::mt19937_64` state still goes through `operator<<`, because engines
+  have no formatter.
 - **Armadillo is not installed and `src/` doesn't need it.** Only the professor's
   `NSL_SIMULATOR/` links `-larmadillo`. Install it (`sudo apt install
   libarmadillo-dev`, run by the user) only to build his code for a direct
@@ -234,7 +244,7 @@ Per-group notes:
 - **Don't restyle the professor's simulator.** It uses C++11, Armadillo
   `vec`/`field`, `using namespace` in headers, and `_member` names. If it is
   ever extended, keep it recognizable to him. New code (`src/`, the exercises,
-  any rewrite by the user) follows the global C++17 conventions (RAII, no owning
+  any rewrite by the user) is C++23 and follows the global conventions (RAII, no owning
   raw pointers) and the style of `src/`.
 - **Params come from input files**, not recompiles. A run is reproducible from
   its input file (`input.dat` or `exNN/input/`) plus the seed.

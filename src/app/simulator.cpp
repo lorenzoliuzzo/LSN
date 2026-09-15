@@ -1,6 +1,7 @@
+#include <cstdio>
 #include <exception>
 #include <filesystem>
-#include <iostream>
+#include <print>
 
 #include "app/run_setup.h"
 #include "core/input_file.h"
@@ -10,8 +11,8 @@
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
-    std::cerr << "usage: " << argv[0] << " <run_dir>\n"
-              << "  reads <run_dir>/input.dat, writes results to <run_dir>/output/\n";
+    std::println(stderr, "usage: {} <run_dir>\n  reads <run_dir>/input.dat, writes results to <run_dir>/output/",
+                 argv[0]);
     return 2;
   }
   try {
@@ -30,7 +31,7 @@ int main(int argc, char* argv[]) {
         break;
     }
   } catch (const std::exception& error) {
-    std::cerr << "error: " << error.what() << '\n';
+    std::println(stderr, "error: {}", error.what());
     return 1;
   }
   return 0;

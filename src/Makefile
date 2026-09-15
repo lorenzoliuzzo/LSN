@@ -1,7 +1,7 @@
 # make                          builds build/simulator
 # build/simulator <run_dir>     reads <run_dir>/input.dat, writes <run_dir>/output/
-CXX      := g++
-CXXFLAGS := -O3 -std=c++17 -Wall -Wextra -Wpedantic
+CXX      := g++-14
+CXXFLAGS := -O3 -std=c++23 -Wall -Wextra -Wpedantic
 CPPFLAGS := -I. -MMD -MP
 BUILD    := build
 

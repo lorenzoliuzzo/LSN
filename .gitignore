@@ -16,3 +16,6 @@ NSL_SIMULATOR/OUTPUT/**
 src/build/
 src/examples/*/output/
 ex*/runs/*/output/
+
+# Exercise build products
+ex*/build/

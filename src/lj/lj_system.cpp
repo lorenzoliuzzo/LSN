@@ -1,7 +1,8 @@
 #include "lj/lj_system.h"
 
 #include <cmath>
-#include <iomanip>
+#include <numbers>
+#include <print>
 #include <stdexcept>
 #include <string>
 
@@ -10,7 +11,7 @@
 #include "core/random.h"
 
 namespace {
-constexpr double pi = 3.14159265358979323846;
+constexpr double pi = std::numbers::pi;
 
 std::size_t checked_npart(int npart) {
   if (npart < 2) throw std::runtime_error("NPART must be at least 2");
@@ -196,8 +197,7 @@ std::vector<Vec3> LJSystem::read_xyz(const std::filesystem::path& file) const {
 
 void LJSystem::write_xyz(const std::filesystem::path& file, const std::vector<Vec3>& positions) const {
   std::ofstream out = open_output(file);
-  out << size() << "\n# positions in units of the box side\n" << std::setprecision(17);
-  for (const Vec3& r : positions) {
-    out << "LJ " << r.x / side_ << ' ' << r.y / side_ << ' ' << r.z / side_ << '\n';
-  }
+  std::println(out, "{}\n# positions in units of the box side", size());
+  // {} prints the shortest decimal that reads back as the same double, so a restart is exact.
+  for (const Vec3& r : positions) std::println(out, "LJ {} {} {}", r.x / side_, r.y / side_, r.z / side_);
 }

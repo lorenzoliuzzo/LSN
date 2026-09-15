@@ -1,6 +1,7 @@
 #include "ising/ising_chain.h"
 
 #include <cmath>
+#include <print>
 #include <stdexcept>
 #include <string>
 
@@ -77,6 +78,6 @@ void IsingChain::read_spins(const std::filesystem::path& file) {
 
 void IsingChain::write_spins(const std::filesystem::path& file) const {
   std::ofstream out = open_output(file);
-  for (int s : spins_) out << s << ' ';
-  out << '\n';
+  for (int s : spins_) std::print(out, "{} ", s);
+  std::print(out, "\n");
 }

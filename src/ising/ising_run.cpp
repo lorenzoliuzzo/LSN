@@ -1,7 +1,7 @@
 #include "ising/ising_run.h"
 
 #include <fstream>
-#include <iostream>
+#include <print>
 
 #include "app/run_setup.h"
 #include "core/blocking.h"
@@ -32,7 +32,7 @@ void run_ising(const InputFile& input, const RunSetup& setup, Random& rnd) {
   ScalarObservable susceptibility(out / "susceptibility.dat", "CHI/N");
   ScalarObservable magnetization(out / "magnetization.dat", "M/N");
   std::ofstream acceptance = open_output(out / "acceptance.dat");
-  acceptance << "# BLOCK: ACCEPTANCE:\n";
+  std::println(acceptance, "# BLOCK: ACCEPTANCE:");
 
   const double beta = 1.0 / setup.temp;
   auto sweep = [&]() -> int {
@@ -65,14 +65,14 @@ void run_ising(const InputFile& input, const RunSetup& setup, Random& rnd) {
     //   C = beta^2 (<H^2> - <H>^2),   chi = beta <M^2>  (the h = 0 form, where <M> = 0).
     heat_capacity.close_block(beta * beta * (sum_h2 / samples - mean_h * mean_h) / nspin);
     susceptibility.close_block(beta * (sum_m2 / samples) / nspin);
-    acceptance << block << ' ' << static_cast<double>(accepted) / (samples * nspin) << '\n';
+    std::println(acceptance, "{} {}", block, static_cast<double>(accepted) / (samples * nspin));
   }
 
   chain.write_spins(out / "config.spin");
   rnd.save_state(out / "seed.out");
 
-  std::cout << "1D Ising, " << (gibbs ? "Gibbs" : "Metropolis") << ", T = " << setup.temp << ": "
-            << setup.nblocks << " blocks x " << setup.nsteps << " steps\n";
+  std::println("1D Ising, {}, T = {}: {} blocks x {} steps", gibbs ? "Gibbs" : "Metropolis", setup.temp,
+               setup.nblocks, setup.nsteps);
   print_summary("U/N", energy);
   print_summary("C/N", heat_capacity);
   print_summary("CHI/N", susceptibility);
