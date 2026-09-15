@@ -107,14 +107,26 @@ worth keeping go into `exNN/data/`, with the input set used under `exNN/input/`.
   numerically efficient. This overrides the global "no what-comments" rule:
   comment the physics and the algorithm (which quantity, which formula, which
   units, why this proposal or step size). Still don't narrate trivial C++.
-- **RNG: always the NSL generator** (`Random::Rannyu`, `Gauss`), seeded as the
-  simulator does it: a pair from `Primes` plus 4 ints from `seed.in` go into
-  `SetRandom(seed, p1, p2)`, and `SaveSeed()` runs at the end. No `<random>`, no
-  `std::mt19937`, no `std::*_distribution`. Ex 01.1 tests this generator and
-  01.2 extends it (exponential and Cauchy by inversion), and later exercises
-  build on it. New distributions are sampled by hand (inversion or
-  accept–reject), because implementing the sampling is the point. MPI ranks
-  (group 10) each take a different `Primes` line.
+- **RNG: always through the course `Random` interface** (`SetRandom`, `Rannyu`,
+  `Gauss`, `SaveSeed`), seeded from input files, never from the clock or
+  `std::random_device`, so every run is reproducible. MPI ranks (group 10) each
+  take a different `Primes` line.
+  - **Group 01 uses the course generator itself**: a 48-bit LCG with period
+    2⁴⁷, where a pair from `Primes` plus 4 ints from `seed.in` go into
+    `SetRandom(seed, p1, p2)`. Ex 01.1 tests it and 01.2 extends it
+    (exponential and Cauchy by inversion).
+  - **From group 02 on, the engine behind that interface may be a `<random>`
+    engine.** Prefer `std::mt19937_64`; `std::ranlux48` is fine for
+    cross-checks; never `std::minstd_rand` (31-bit LCG, worse than the course
+    one). Each notebook states which engine was used.
+  - **Never `std::*_distribution`.** Their algorithms are implementation-defined
+    (libstdc++ and libc++ give different numbers for the same seed), and
+    sampling by hand (inversion, accept–reject, Box–Muller) is the point. Map
+    raw engine output to [0,1) yourself, e.g. `(x >> 11) * 0x1.0p-53` for a
+    64-bit engine.
+  - `std::linear_congruential_engine<std::uint64_t, 34522712143931ULL,
+    p1*4096 + p2, 1ULL << 48>`, scaled by 2⁻⁴⁸, reproduces `Rannyu` bit for bit
+    (checked for 10⁷ draws), so the two engines can be swapped for comparisons.
 - **Data blocking is mandatory**, and a result without an uncertainty counts as
   incomplete. For M steps in N blocks, report progressive averages with error
   `sqrt((<A²> − <A>²)/(n−1))`, set to 0 for the first block, plotted with error
