@@ -9,14 +9,14 @@ red-font figure present, every question answered, results match the reference.
 - [x] Install MPI (`libopenmpi-dev openmpi-bin`, Open MPI 4.1.6)
 - [ ] `uv pip install --python .venv/bin/python tensorflow` (for 11–12)
 - [x] Move the professor's simulator into tracked `NSL_SIMULATOR/` (reference code, `._*` files dropped)
-- [ ] Copy NSL RNG into `common/` (random.h/.cpp, Primes, seed.in) + blocking helper
+- [x] Shared C++ library in `src/core/` (RNG, blocking, Vec3, input parsing)
 
-## Own simulator (for 04, 06, 07; user writes it)
-- [ ] Decide: own simulator or extend the professor's; directory name; Armadillo or not
-- [ ] Install Armadillo only if the chosen simulator needs it (`sudo apt install libarmadillo-dev`)
-- [ ] MD (Verlet, NVE) + MC (Metropolis, NVT) for Lennard-Jones, Metropolis + Gibbs for 1D Ising
-- [ ] Blocking + input-file driven parameters + restart from a saved configuration
-- [ ] Cross-check against `NSL_SIMULATOR/` on the same input
+## Simulator (`src/`, for 04, 06, 07)
+- [x] MD (Verlet, NVE) + MC (Metropolis, NVT) for Lennard-Jones, Metropolis + Gibbs for 1D Ising
+- [x] Blocking, input-file parameters, `RESTART_FROM`, `NEQUIL`, choice of RNG engine
+- [x] Verified on `src/examples/` (see `AGENTS.md`): RNG = Rannyu, Ising vs exact, E conservation, g(r), p(v), time reversal
+- [ ] User studies `src/` and rewrites the parts they want to learn by writing
+- [ ] Optional: install Armadillo (`sudo apt install libarmadillo-dev`) and cross-check against `NSL_SIMULATOR/` on the same input
 
 ## 01 — RNG, CLT, Buffon
 - [ ] 01.1.1 `<r>` with blocking vs #throws
@@ -36,7 +36,7 @@ red-font figure present, every question answered, results match the reference.
 - [ ] 4 figures vs analytic C = 14.9758, P = 5.4595
 
 ## 04 — MD, Maxwell–Boltzmann (simulator)
-- [ ] 04.1 p(v*) histogram with blocking inside the simulator
+- [x] 04.1 p(v*) histogram with blocking inside the simulator (`POFV_BINS`, `pofv.dat`)
 - [ ] 04.2 gas ρ*=0.05, T*≈2, r_c=5: fcc half-box + δ-velocity start; convergence to MB at T_eff
 - [ ] 04.2 comment on entropy and time direction
 - [ ] 04.3 time reversal from ~5×10³ and ~5×10⁴ steps; U and T per block both directions
@@ -49,17 +49,17 @@ red-font figure present, every question answered, results match the reference.
 - [ ] 3D scatter of sampled points
 
 ## 06 — 1D Ising (simulator)
-- [ ] Implement Gibbs sampler; verify restart from a spin configuration
-- [ ] Add C, χ, M measurements
+- [x] Implement Gibbs sampler; verify restart from a spin configuration (`SIMULATION_TYPE 3`, `RESTART_FROM`)
+- [x] Add C, χ, M measurements
 - [ ] U, C, χ (h=0), M (h=0.02) vs T ∈ [0.5, 2], N=50, J=1; Metropolis and Gibbs vs exact curves
 
 ## 07 — LJ MC vs MD (simulator)
-- [ ] 07.1 tail corrections for U and P
+- [x] 07.1 tail corrections for U and P
 - [ ] 07.2 find MD starting T that equilibrates at T*=1.1; MC step for 50% acceptance
 - [ ] 07.2 instantaneous U/N, 5×10⁵ steps MC + MD (restart after equilibration)
 - [ ] 07.2 autocorrelation of U/N
 - [ ] 07.2 error vs block size L=10..5×10³; comment
-- [ ] 07.3 g(r) on [0, L/2] with blocking, separate output file
+- [x] 07.3 g(r) on [0, L/2] with blocking, separate output file (`gofr.dat`, `gofr_blocks.dat`)
 - [ ] 07.4 liquid ρ*=0.8, T*=1.1, r_c=2.5: U/N, P, g(r), MC NVT vs MD NVE
 
 ## 08 — Variational Monte Carlo

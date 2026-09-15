@@ -1,0 +1,10 @@
+# Ex 06: 1D Ising, N = 50, J = 1, h = 0, Metropolis.
+SIMULATION_TYPE  2 1.0 0.0
+PRIMES_FILE      ../Primes
+SEED_FILE        ../seed.in
+TEMP             1.0
+NPART            50
+NEQUIL           1000
+NBLOCKS          20
+NSTEPS           5000
+ENDINPUT

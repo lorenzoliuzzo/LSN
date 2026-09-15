@@ -48,42 +48,91 @@ them into the tracked tree first.
 
 ## Deliverable layout (tracked)
 ```
-common/                 NSL RNG (random.h/.cpp, Primes, seed.in) + blocking helper,
-                        shared by every standalone C++ exercise
+src/                    shared C++ library (core/: RNG, blocking, Vec3, input parsing)
+                        and the simulator used by 04, 06, 07 (lj/, ising/, app/); see below
 NSL_SIMULATOR/          the professor's simulator (SOURCE/, INPUT/, OUTPUT/),
                         committed as shipped: reference code, see below
 exNN/                   one directory per group, NN = 01..12
-  Makefile, *.cpp, *.h  standalone C++ code (01–03, 05, 08–10)
+  Makefile, *.cpp, *.h  standalone C++ code (01–03, 05, 08–10). Reuses src/core by
+                        compiling ../src/core/*.cpp with -I../src; don't copy it
   input/                parameter files read by the program (no hard-coded params)
+  runs/<name>/          run directories for src/build/simulator (04, 06, 07);
+                        their output/ is git-ignored
   data/                 outputs the notebook reads (commit them)
   exNN.ipynb            the report for group NN
 README.md               compile & run instructions for every group (course requirement)
 ```
-### The simulator: the professor's code is reference, not the base
-The user will **probably write their own simulator, for learning purposes**, and
-use it for groups 04, 06, 07 instead of extending `NSL_SIMULATOR/`. Until the
-user decides:
-- Treat `NSL_SIMULATOR/` as reference. Read it to understand what the course
-  expects (input format, measured properties, blocking, output files) and use
-  it as a cross-check, but don't build features on it or modify it.
-- The user's own simulator lives in its own directory (name chosen by the user).
-  **The user writes it.** Explain algorithms, review their code, point at bugs
-  and at what the professor's version does differently. Don't write the
-  simulator for them unless they ask for a specific piece.
-- Whichever simulator is used, it must eventually provide everything 04, 06, 07
-  ask for (p(v), Gibbs sampling, C/χ/M, tail corrections, g(r)), and features
-  added for later groups must not break earlier ones.
+### The simulator: `src/` (modern sketch) and `NSL_SIMULATOR/` (the professor's)
+- **`NSL_SIMULATOR/` is reference only.** Read it to see what the course expects
+  (input format, measured properties, output files) and use it as a cross-check.
+  Don't build on it or modify it.
+- **`src/` is a from-scratch C++17 simulator** that Claude sketched at the
+  user's request on 2026-09-15. It needs no Armadillo and already covers
+  everything 04, 06, 07 ask for (p(v), Gibbs, C/χ/M, tail corrections, g(r),
+  the low-entropy start, time reversal). The user may study it and rewrite parts
+  of it to learn. Explain it, review any rewrite against it, and change it only
+  when asked. Features added for later groups must not break earlier ones.
 
-The professor's code hard-codes the relative paths `../INPUT` and `../OUTPUT`,
-so it runs from `NSL_SIMULATOR/SOURCE/`. Its `OUTPUT/` is git-ignored. Results
-worth keeping go into `exNN/data/`, with the input set used under `exNN/input/`.
+```
+src/core/      Vec3, Random (course LCG or mt19937_64), BlockStats / ScalarObservable /
+               BlockedHistogram, InputFile, io
+src/lj/        LJSystem (box, minimum image, fcc, forces, virial, tails, g(r), xyz),
+               Verlet step + Metropolis sweep, MD/MC driver
+src/ising/     IsingChain (Metropolis, Gibbs), driver
+src/app/       run setup (simulation type, blocks, restart, RNG) and main()
+src/examples/  one run directory per case, sharing Primes and seed.in
+```
+
+- **Build and run:** `make -C src`, then `src/build/simulator <run_dir>`. It reads
+  `<run_dir>/input.dat` and writes `<run_dir>/output/`.
+- **Input keys:** the professor's (`SIMULATION_TYPE` 0 MD | 1 MC | `2 J h` Ising
+  Metropolis | `3 J h` Ising Gibbs, `TEMP`, `NPART`, `RHO`, `R_CUT`, `DELTA`,
+  `NBLOCKS`, `NSTEPS`) plus `NEQUIL`, `RESTART_FROM <dir>`,
+  `RNG_ENGINE NSL|MT19937_64`, `PRIMES_FILE`, `PRIMES_LINE`, `SEED_FILE`,
+  `GOFR_BINS`, `POFV_BINS`, `POFV_VMAX`, `INIT_LATTICE FCC|FCC_HALF`,
+  `INIT_VELOCITIES GAUSS|DELTA`, `REVERSE_TIME`, `PRINT_INSTANT`, `XYZ_EVERY`.
+  A key the run doesn't use is an error (it catches typos). The initial-state
+  keys and `SEED_FILE` are still accepted on a restart, so continuing a run only
+  means adding `RESTART_FROM`.
+- **Outputs:** the professor's file names and `BLOCK ACTUAL AVE ERROR` columns,
+  plus `gofr_blocks.dat`, `pofv_blocks.dat` and `instant.dat`. The final state
+  (`config.xyz`, `conf-1.xyz` for MD, `config.spin`, `seed.out`) is what
+  `RESTART_FROM` reads.
+- **Verified 2026-09-15 on `src/examples/`** (re-run these checks after changing
+  `src/`):
+  - Random numbers are bit-identical to the professor's `Rannyu` over 10⁶ draws.
+  - Ising at T = 1 matches the exact formulas within about 1.2σ with both
+    samplers.
+  - MD conserves E/N to 3·10⁻⁴.
+  - MC acceptance is 47% at DELTA 0.11.
+  - g(r) peaks at r = 1.09 and tends to 1.
+  - p(v) integrates to 1 and approaches Maxwell–Boltzmann at T_eff.
+  - MD time reversal returns to the start exact to 10 digits.
+- **Deliberate differences from the professor's code**, worth knowing for the
+  oral:
+  - The block error divides by N−1; his divides by N.
+  - MD measures U, K and E at the same time t; he measures U one step after the
+    velocities.
+  - MC pressure includes ρT. His MC runs have zero velocities, so that term is
+    missing from his pressure.
+  - Ising Metropolis picks sites at random. A sequential sweep accepts every
+    ΔE = 0 flip with certainty, so antiferromagnetic stretches just shift one
+    site per sweep and never relax; it gave U/N = +0.12 instead of −0.76 at T = 1.
+  - Acceptance is reported per block, not accumulated over the run.
+
+Runs for an exercise live in `exNN/runs/<name>/input.dat`, with `PRIMES_FILE`
+and `SEED_FILE` pointing at shared copies. Copy the output files a notebook reads
+into `exNN/data/`. The professor's code hard-codes the relative paths `../INPUT`
+and `../OUTPUT`, so it runs from `NSL_SIMULATOR/SOURCE/`, and its `OUTPUT/` is
+git-ignored.
 
 ## Toolchain (checked 2026-09-15)
 - `g++` 13.3. No cmake: use plain Makefiles like the professor's. New code
-  builds with `-O3 -std=c++17 -Wall -Wextra`.
-- **Armadillo is not installed, on purpose.** The professor's simulator links
-  `-larmadillo`, but installing it waits until the user decides whether their
-  own simulator uses it. Don't install it or build `NSL_SIMULATOR/` until then.
+  builds with `-O3 -std=c++17 -Wall -Wextra -Wpedantic`.
+- **Armadillo is not installed and `src/` doesn't need it.** Only the professor's
+  `NSL_SIMULATOR/` links `-larmadillo`. Install it (`sudo apt install
+  libarmadillo-dev`, run by the user) only to build his code for a direct
+  cross-check.
 - MPI (group 10): Open MPI 4.1.6 (`mpicxx`, `mpirun`). The CPU has 10 physical
   cores / 16 hardware threads, and Open MPI counts cores, so 11 ranks need
   `mpirun --use-hwthread-cpus -np 11`. Build with `-DOMPI_SKIP_MPICXX`: Open MPI's
@@ -184,11 +233,11 @@ Per-group notes:
 ## Working method in this repo
 - **Don't restyle the professor's simulator.** It uses C++11, Armadillo
   `vec`/`field`, `using namespace` in headers, and `_member` names. If it is
-  ever extended, keep it recognizable to him. New code, including the user's
-  own simulator, follows the global C++17 conventions (RAII, no owning raw
-  pointers).
+  ever extended, keep it recognizable to him. New code (`src/`, the exercises,
+  any rewrite by the user) follows the global C++17 conventions (RAII, no owning
+  raw pointers) and the style of `src/`.
 - **Params come from input files**, not recompiles. A run is reproducible from
-  `input/` + seed.
+  its input file (`input.dat` or `exNN/input/`) plus the seed.
 - **No unit-test framework here.** This overrides the global "always pytest"
   rule. Correctness is shown by agreement with exact or known results, within
   error bars, in the notebook, plus runtime checks where the statement asks for

@@ -1,0 +1,14 @@
+# LJ liquid, Metropolis Monte Carlo (NVT). DELTA is the trial step: tune it for ~50% acceptance.
+SIMULATION_TYPE  1
+PRIMES_FILE      ../Primes
+SEED_FILE        ../seed.in
+TEMP             1.1
+NPART            108
+RHO              0.8
+R_CUT            2.5
+DELTA            0.11
+NEQUIL           500
+NBLOCKS          20
+NSTEPS           2000
+GOFR_BINS        100
+ENDINPUT

@@ -11,3 +11,8 @@ simulator/
 NSL_SIMULATOR/OUTPUT/**
 !NSL_SIMULATOR/OUTPUT/**/
 !NSL_SIMULATOR/OUTPUT/**/.gitkeep
+
+# Own simulator: build products and run outputs
+src/build/
+src/examples/*/output/
+ex*/runs/*/output/
